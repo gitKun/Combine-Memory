@@ -20,12 +20,12 @@ import Combine
 
 extension UIButton {
 
-    public func subscriber(forTitle state: UIControl.State) -> Subscribers.Sink<String, Never> {
-        Subscribers.Sink<String, Never> { _ in
+    public func subscriber(forTitle state: UIControl.State) -> AnySubscriber<String, Never> {
+        .init(Subscribers.Sink<String, Never> { _ in
             print("Subscriber<Button.title> finished! ____&")
         } receiveValue: { [weak self] value in
             self?.setTitle(value, for: state)
-        }
+        })
     }
 }
 
@@ -69,13 +69,15 @@ fileprivate final class ControlPublisher1<Control: UIControl>: Publisher {
     }
 
     deinit {
-        cancelStore.forEach { $0() }
+        // NOTE: - 1. 虽然能够实现内存释放, 但 share() 操作后 ControlPublisher1 会强引用
+        // NOTE: - 2. 此种情况下 deinit 不会执行, 形成循环引用
+        // cancelStore.forEach { $0() }
         Swift.print("ControlPublisher1<\(type(of: control))> deinit! ____#")
     }
 
     func receive<S>(subscriber: S) where S : Subscriber, Never == S.Failure, Control == S.Input {
         let subscription = ControlSubscription(subscriber: subscriber, control: control, event: event)
-        //cancelStore.append({ subscription.cancel() })
+        // cancelStore.append(subscription.cancel)
         subscriber.receive(subscription: subscription)
     }
 }
@@ -103,7 +105,7 @@ fileprivate final class ControlSubscription<S: Subscriber, Control: UIControl>: 
         }
     }
 
-    /// 释放内存
+    // NOTE: - 释放内存
     func cancel() {
         subscriber = nil
         print("ControlSubscription<\(type(of: control))> cancel! ____@")
@@ -142,6 +144,8 @@ fileprivate final class ControlPublisher2: Publisher {
     // 经典类型摸除, 更多请参考:
     // https://www.swiftbysundell.com/articles/type-erasure-using-closures-in-swift/
     // https://www.swiftbysundell.com/articles/different-flavors-of-type-erasure-in-swift/
+
+    // 模仿多次订阅
     private var sendControls: [((UIControl) -> Void)] = []
     private var sendFinished: [(() -> Void)] = []
 
@@ -155,7 +159,6 @@ fileprivate final class ControlPublisher2: Publisher {
 
         sendControls.removeAll()
         sendFinished.removeAll()
-
         Swift.print("ControlPublisher2<\(type(of: control))> deinit! ____#")
     }
 
@@ -165,10 +168,6 @@ fileprivate final class ControlPublisher2: Publisher {
         subscriber.receive(subscription: Subscriptions.empty)
     }
 
-//    func share() -> ControlPublisher2 {
-//        return self
-//    }
-
     @objc private func doAction(sender: UIControl) {
         if let control = control {
             sendControls.forEach { $0(control) }
@@ -176,122 +175,33 @@ fileprivate final class ControlPublisher2: Publisher {
     }
 }
 
-
-
-@available(iOS 13.0, *)
-fileprivate struct AssociatedActionKeys {
-    static var kDefaultKey: Void?
-
-    static var touchDown: Void?
-    static var touchDownRepeat: Void?
-    static var touchDragInside: Void?
-    static var touchDragOutside: Void?
-    static var touchDragEnter: Void?
-    static var touchDragExit: Void?
-    static var touchUpInside: Void?
-    static var touchUpOutside: Void?
-    static var touchCancel: Void?
-    static var valueChanged: Void?
-    static var primaryActionTriggered: Void?
-
-    @available(iOS 14.0, *)
-    static var menuActionTriggered: Void?
-
-    static var editingDidBegin: Void?
-    static var editingChanged: Void?
-    static var editingDidEnd: Void?
-    static var editingDidEndOnExit: Void?
-    static var allTouchEvents: Void?
-    static var allEditingEvents: Void?
-    static var applicationReserved: Void?
-    static var systemReserved: Void?
-    static var allEvents: Void?
-}
-
-@available(iOS 13.0, *)
-fileprivate extension UIControl.Event {
-
-    var publisherActionKey: UnsafeRawPointer {
-
-        if #available(iOS 14.0, *) {
-            if case .menuActionTriggered = self {
-                return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.valueChanged))
-            }
-        }
-
-        switch self {
-        case .touchDown:
-            return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.touchDown))
-        case .touchDownRepeat:
-            return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.touchDownRepeat))
-        case .touchDragInside:
-            return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.touchDragInside))
-        case .touchDragOutside:
-            return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.touchDragOutside))
-        case .touchDragEnter:
-            return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.touchDragEnter))
-        case .touchDragExit:
-            return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.touchDragExit))
-        case .touchUpInside:
-            return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.touchUpInside))
-        case .touchUpOutside:
-            return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.touchUpOutside))
-        case .touchCancel:
-            return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.touchCancel))
-        case .valueChanged:
-            return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.valueChanged))
-        case .primaryActionTriggered:
-            return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.primaryActionTriggered))
-        case .editingDidBegin:
-            return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.editingDidBegin))
-        case .editingChanged:
-            return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.editingChanged))
-        case .editingDidEnd:
-            return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.editingDidEnd))
-        case .editingDidEndOnExit:
-            return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.editingDidEndOnExit))
-        case .allTouchEvents:
-            return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.allTouchEvents))
-        case .allEditingEvents:
-            return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.allEditingEvents))
-        case .applicationReserved:
-            return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.applicationReserved))
-        case .systemReserved:
-            return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.systemReserved))
-        case .allEvents:
-            return .init(UnsafeMutableRawPointer(&AssociatedActionKeys.allEvents))
-        default:
-            return UnsafeRawPointer(UnsafeMutableRawPointer(&AssociatedActionKeys.kDefaultKey))
-        }
-    }
-}
-
-
 extension UIControl {
 
     public func publisher3(forAction event: UIControl.Event) -> AnyPublisher<UIControl, Never> {
+        // NOTE: - 根据 event 生成关联对象的 key
         let eventKey = event.publisherActionKey
-        if let publisher = objc_getAssociatedObject(self, eventKey) as? AnyPublisher<UIControl, Never> {
-            return publisher
+        if let wraped = objc_getAssociatedObject(self, eventKey) as? ControlPublisher3 {
+            return wraped.publisher
         } else {
             let publisher = ControlPublisher3(control: self, event: event)
-                .eraseToAnyPublisher()
+            // NOTE: - 这里需要强持有 publisher, 类似于 View 强持有 ViewModel
             objc_setAssociatedObject(self, eventKey, publisher, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-            return publisher
+            return publisher.publisher
         }
     }
 }
 
-fileprivate final class ControlPublisher3: Publisher  {
-    typealias Failure = Never
-    typealias Output = UIControl
+
+fileprivate final class ControlPublisher3 {
 
     private let subject = PassthroughSubject<UIControl, Never>()
+    let publisher: AnyPublisher<UIControl, Never>
 
     private weak var control: UIControl?
 
     init(control: UIControl, event: UIControl.Event) {
         self.control = control
+        self.publisher = self.subject.eraseToAnyPublisher()
 
         control.addTarget(self, action: #selector(doAction(sender:)), for: event)
     }
@@ -299,10 +209,6 @@ fileprivate final class ControlPublisher3: Publisher  {
     deinit {
         subject.send(completion: .finished)
         Swift.print("ControlPublisher3<\(type(of: control))> deinit! ____#")
-    }
-
-    func receive<S>(subscriber: S) where S : Subscriber, Never == S.Failure, UIControl == S.Input {
-        subject.receive(subscriber: subscriber)
     }
 
     @objc private func doAction(sender: UIControl) {

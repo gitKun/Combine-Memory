@@ -25,7 +25,8 @@ class ViewController: UIViewController {
     private var count = 0
 
     private var cancellable: Set<AnyCancellable> = []
-    private var testSubject = PassthroughSubject<Void, Never>()
+
+    private let receiveSubject = PassthroughSubject<String, Never>()
 
 // MARK: - 生命周期 & override
 
@@ -38,6 +39,7 @@ class ViewController: UIViewController {
     }
 
     deinit {
+        receiveSubject.send(completion: .finished)
         print("ViewController deinit! ____#")
     }
 
@@ -57,11 +59,11 @@ class ViewController: UIViewController {
 
 }
 
-// MARK: - 事件处理
+// MARK: - 绑定 viewModel
 
 extension ViewController {
 
-    func eventListen() {
+    func bindViewModel() {
 
         if !canShow {
 
@@ -73,61 +75,62 @@ extension ViewController {
                 }
                 .store(in: &cancellable)
         } else {
-            buttonSubscriber = Subscribers.Sink<String, Never> { _ in
-                print("Subscriber<Button.title> finished! ____&")
-            } receiveValue: { [weak self] value in
-                self?.countButton.setTitle(value, for: .normal)
-            }
-            //buttonSubscriber.store(in: &cancellable)
 
-            let addPublisher = addButton.publisher1(forAction: .touchUpInside)
-//                .share()
+            let addPublisher = addButton.publisher3(forAction: .touchUpInside)
+                .map { [weak self] _ -> String in
+                    self?.count += 1
+                    return "\(self?.count ?? 0)"
+                }
+                .share()
 
-//            addPublisher.receive(subscriber: Subscribers.Sink.init(receiveCompletion: { _ in
-//                print("Subscribers.Sink finished! ____&")
-//            }, receiveValue: { _ in
-//                print("Subscribers.Sink 接收到值")
-//            }))
+            // TEST: - 多次订阅
+            addPublisher.receive(subscriber: countButton.subscriber(forTitle: .normal))
+            addPublisher.receive(subscriber: TestSubscriber())
+
+//            let testSubscriber3 = TestSubscriber(button: countButton, state: .normal)
+            // testSubscriber3.store(in: &cancellable)
+
+            // TEST: - subjet 转换的 AnySubscriber 订阅后的问题
+//            addPublisher.receive(subscriber: AnySubscriber(testSubscriber3))
+
+//            receiveSubject.receive(subscriber: testSubscriber3)
+
+            // TEST: - 直接 receiver(subscriber:)
+//            addPublisher
+//                .receive(subscriber: countButton.subscriber(forTitle: .normal))
 
 //            let testSubscriber = TestSubscriber()
 //            testSubscriber.store(in: &cancellable)
-//            let testSubscriber2 = TestSubscriber()
-//            testSubscriber2.store(in: &cancellable)
 
 //            addPublisher
-//                .map { [weak self] _ -> String in
-//                    self?.count += 1
-//                    return "\(self?.count ?? 0)"
-//                }
 //                .receive(subscriber: testSubscriber)
 
+//            let testSubscriber2 = TestSubscriber(button: countButton, state: .normal)
+//            testSubscriber2.store(in: &cancellable)
+//
 //            addPublisher
-//                .map { [weak self] _ -> String in
-//                    self?.count += 1
-//                    return "\(self?.count ?? 0)"
-//                }
 //                .receive(subscriber: testSubscriber2)
 
-            addPublisher
-                .sink { _ in
-                    print("多次订阅 - 1 - 接收到值")
-                }
-                .store(in: &cancellable)
+//            addPublisher
+//                .sink { value in
+//                    print("多次订阅 - 1 - 接收到值: \(value)")
+//                }
+//                .store(in: &cancellable)
 
 //            addPublisher
-//                .sink { _ in
-//                    print("多次订阅 - 2 - 接收到值")
+//                .sink { value in
+//                    print("多次订阅 - 2 - 接收到值:\(value)")
 //                }
 //                .store(in: &cancellable)
         }
     }
 }
 
-// MARK: - 绑定 viewModel
+// MARK: - 事件处理
 
 extension ViewController {
 
-    func bindViewModel() {
+    func eventListen() {
 
         // 模仿
 //        testSubject

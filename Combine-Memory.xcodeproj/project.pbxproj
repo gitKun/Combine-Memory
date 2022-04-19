@@ -16,6 +16,7 @@
 		BC2B9B53280D4033008B2AF4 /* TestSubscriber.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC2B9B52280D4033008B2AF4 /* TestSubscriber.swift */; };
 		BC2B9B55280D403D008B2AF4 /* TestButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC2B9B54280D403D008B2AF4 /* TestButton.swift */; };
 		BC2B9B57280D4058008B2AF4 /* UIControl+Combine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC2B9B56280D4058008B2AF4 /* UIControl+Combine.swift */; };
+		BC2B9B59280E4CEB008B2AF4 /* UIControEvent+ActionKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC2B9B58280E4CEA008B2AF4 /* UIControEvent+ActionKey.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +31,7 @@
 		BC2B9B52280D4033008B2AF4 /* TestSubscriber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestSubscriber.swift; sourceTree = "<group>"; };
 		BC2B9B54280D403D008B2AF4 /* TestButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestButton.swift; sourceTree = "<group>"; };
 		BC2B9B56280D4058008B2AF4 /* UIControl+Combine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIControl+Combine.swift"; sourceTree = "<group>"; };
+		BC2B9B58280E4CEA008B2AF4 /* UIControEvent+ActionKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIControEvent+ActionKey.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -80,6 +82,7 @@
 			isa = PBXGroup;
 			children = (
 				BC2B9B56280D4058008B2AF4 /* UIControl+Combine.swift */,
+				BC2B9B58280E4CEA008B2AF4 /* UIControEvent+ActionKey.swift */,
 			);
 			path = Ext;
 			sourceTree = "<group>";
@@ -158,6 +161,7 @@
 				BC2B9B55280D403D008B2AF4 /* TestButton.swift in Sources */,
 				BC2B9B57280D4058008B2AF4 /* UIControl+Combine.swift in Sources */,
 				BC2B9B42280D3F1C008B2AF4 /* ViewController.swift in Sources */,
+				BC2B9B59280E4CEB008B2AF4 /* UIControEvent+ActionKey.swift in Sources */,
 				BC2B9B3E280D3F1C008B2AF4 /* AppDelegate.swift in Sources */,
 				BC2B9B40280D3F1C008B2AF4 /* SceneDelegate.swift in Sources */,
 				BC2B9B53280D4033008B2AF4 /* TestSubscriber.swift in Sources */,
